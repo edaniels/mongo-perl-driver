@@ -26,6 +26,8 @@ use Moose;
 use MongoDB;
 use namespace::clean -except => 'meta';
 
+use base qw/BSON::Types::ObjectId/;
+
 =head1 NAME
 
 MongoDB::OID - A Mongo ObjectId

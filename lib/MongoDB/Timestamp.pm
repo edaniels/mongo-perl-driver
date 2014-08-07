@@ -38,6 +38,8 @@ L<DateTime>.  See <MongoDB::DataTypes> for more information.
 use Moose;
 use namespace::clean -except => 'meta';
 
+use base qw/BSON::Types::Timestamp/;
+
 =head1 ATTRIBUTES
 
 =head2 sec
@@ -63,6 +65,9 @@ has inc => (
     isa      => 'Int',
     required => 1,
 );
+
+sub seconds { shift->sec; }
+sub increment { shift->inc; }
 
 __PACKAGE__->meta->make_immutable;
 

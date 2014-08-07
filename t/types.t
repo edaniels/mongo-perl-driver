@@ -125,8 +125,8 @@ is($id."", $id->value);
 {
     $coll->drop;
 
-    my $min = bless {}, "MongoDB::MinKey";
-    my $max = bless {}, "MongoDB::MaxKey";
+    my $min = bless {}, "BSON::Types::MinKey";
+    my $max = bless {}, "BSON::Types::MaxKey";
 
     $coll->insert({min => $min, max => $max});
     my $x = $coll->find_one;

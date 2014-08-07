@@ -1110,7 +1110,7 @@ append_sv (bson_t * bson, const char * in_key, SV *sv, stackette *stack, int is_
   if (SvROK (sv)) {
     if (sv_isobject (sv)) {
       /* OIDs */
-      if (sv_derived_from (sv, "MongoDB::OID")) {
+      if (sv_derived_from (sv, "BSON::Types::ObjectId")) {
         SV *attr = perl_mongo_call_reader (sv, "value");
         char *str = SvPV_nolen (attr);
         bson_oid_t oid;
@@ -1270,24 +1270,24 @@ append_sv (bson_t * bson, const char * in_key, SV *sv, stackette *stack, int is_
         SvREFCNT_dec(code);
         SvREFCNT_dec(scope);
       }
-      else if (sv_isa(sv, "MongoDB::Timestamp")) {
+      else if (sv_derived_from(sv, "BSON::Types::Timestamp")) {
         SV *sec, *inc;
 
-        inc = perl_mongo_call_reader(sv, "inc");
-        sec = perl_mongo_call_reader(sv, "sec");
+        inc = perl_mongo_call_reader(sv, "increment");
+        sec = perl_mongo_call_reader(sv, "seconds");
 
         bson_append_timestamp(bson, key, -1, SvIV(sec), SvIV(inc));
 
         SvREFCNT_dec(sec);
         SvREFCNT_dec(inc);
       }
-      else if (sv_isa(sv, "MongoDB::MinKey")) {
+      else if (sv_derived_from(sv, "BSON::Types::MinKey")) {
         bson_append_minkey(bson, key, -1);
       }
-      else if (sv_isa(sv, "MongoDB::MaxKey")) {
+      else if (sv_derived_from(sv, "BSON::Types::MaxKey")) {
         bson_append_maxkey(bson, key, -1);
       }
-      else if (sv_isa(sv, "MongoDB::BSON::String")) {
+      else if (sv_derived_from(sv, "BSON::Types::String")) {
         SV *str_sv;
         char *str;
         STRLEN str_len;
@@ -1296,14 +1296,14 @@ append_sv (bson_t * bson, const char * in_key, SV *sv, stackette *stack, int is_
 
         // check type ok
         if (!SvPOK(str_sv)) {
-          croak("MongoDB::BSON::String must be a blessed string reference");
+          croak("BSON::Types::String must be a blessed string reference");
         }
 
         str = SvPV(str_sv, str_len);
 
         bson_append_utf8(bson, key, -1, str, str_len);
       }
-      else if (sv_isa(sv, "MongoDB::BSON::Binary")) {
+      else if (sv_derived_from(sv, "BSON::Types::Binary")) {
         SV *data, *subtype;
 
         subtype = perl_mongo_call_reader(sv, "subtype");
@@ -1338,7 +1338,7 @@ append_sv (bson_t * bson, const char * in_key, SV *sv, stackette *stack, int is_
           serialize_binary(bson, key, BSON_SUBTYPE_BINARY, SvRV(sv));
         }
       }
-      else if (sv_isa(sv, "MongoDB::BSON::Regexp") ) { 
+      else if (sv_derived_from(sv, "BSON::Types::Regex") ) {
         /* Abstract regexp object */
         SV *pattern, *flags;
         pattern = perl_mongo_call_reader( sv, "pattern" );

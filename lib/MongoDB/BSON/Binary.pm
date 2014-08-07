@@ -16,7 +16,6 @@
 
 package MongoDB::BSON::Binary;
 
-
 # ABSTRACT: Binary type
 
 use version;
@@ -24,6 +23,8 @@ our $VERSION = 'v0.704.4.1';
 
 use Moose;
 use namespace::clean -except => 'meta';
+
+use base qw/BSON::Types::Binary/;
 
 =head1 NAME
 
