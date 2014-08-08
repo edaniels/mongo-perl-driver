@@ -23,6 +23,9 @@ package MongoDB::_Protocol;
 use version;
 our $VERSION = 'v0.703.5'; # TRIAL
 
+our $encode_bson;
+our $decode_bson;
+
 use Carp ();
 use MongoDB::BSON;
 
@@ -118,8 +121,8 @@ sub write_update {
     my $msg = pack( P_HEADER, 0, _request_id(), 0, OP_UPDATE );
     $msg .=
         pack( P_UPDATE, 0, $ns, $flags )
-      . MongoDB::BSON::encode_bson( $selector, NO_CLEAN_KEYS )
-      . MongoDB::BSON::encode_bson( $update,   substr($first_key,0,1) ne '$' );
+      . &$encode_bson( $selector, NO_CLEAN_KEYS )
+      . &$encode_bson( $update,   substr($first_key,0,1) ne '$' );
     substr( $msg, 0, 4, pack( P_INT32, length($msg) ) );
     return $msg;
 }
@@ -137,7 +140,7 @@ sub write_insert {
     # we don't implement flags, so pack 0
     $msg .= pack( P_INSERT, 0, $ns );
     for my $d (@$docs) {
-        $msg .= MongoDB::BSON::encode_bson( $d, $check_keys ? CLEAN_KEYS : NO_CLEAN_KEYS );
+        $msg .= &$encode_bson( $d, $check_keys ? CLEAN_KEYS : NO_CLEAN_KEYS );
     }
     substr( $msg, 0, 4, pack( P_INT32, length($msg) ) );
     return $msg;
@@ -167,8 +170,8 @@ sub write_query {
     utf8::encode($ns);
     my $msg = pack( P_HEADER, 0, $info->{request_id}, 0, OP_QUERY );
     $msg .= pack( P_QUERY, $flags, $ns, $skip, $limit )
-      . MongoDB::BSON::encode_bson( $query, NO_CLEAN_KEYS );
-    $msg .= MongoDB::BSON::encode_bson( $fields, NO_CLEAN_KEYS ) if ref $fields;
+      . &$encode_bson( $query, NO_CLEAN_KEYS );
+    $msg .= &$encode_bson( $fields, NO_CLEAN_KEYS ) if ref $fields;
     substr( $msg, 0, 4, pack( P_INT32, length($msg) ) );
     return ( $msg, $info );
 }
@@ -206,7 +209,7 @@ sub write_delete {
     utf8::encode($ns);
     my $msg = pack( P_HEADER, 0, _request_id(), 0, OP_DELETE );
     $msg .= pack( P_DELETE, 0, $ns, $flags )
-      . MongoDB::BSON::encode_bson( $selector, NO_CLEAN_KEYS );
+      . &$encode_bson( $selector, NO_CLEAN_KEYS );
     substr( $msg, 0, 4, pack( P_INT32, length($msg) ) );
     return $msg;
 }
@@ -294,7 +297,7 @@ sub parse_reply {
         if ( $len > length($msg) ) {
             Carp::croak("document in response was truncated");
         }
-        push @documents, MongoDB::BSON::decode_bson( substr( $msg, 0, $len, '' ), $client );
+        push @documents, &$decode_bson( substr( $msg, 0, $len, '' ), $client );
     }
 
     if ( @documents != $number_returned ) {

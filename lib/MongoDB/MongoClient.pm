@@ -27,6 +27,7 @@ use MongoDB::Cursor;
 use MongoDB::BSON::Binary;
 use MongoDB::BSON::Regexp;
 use MongoDB::Error;
+use MongoDB::_Protocol;
 use Digest::MD5;
 use Tie::IxHash;
 use Time::HiRes qw/usleep/;
@@ -318,10 +319,25 @@ has _conn_params => (
     isa => 'ArrayRef',
 );
 
+has encode_bson => (
+
+    is => 'ro',
+    default => sub { return \&MongoDB::BSON::encode_bson },
+);
+
+has decode_bson => (
+
+    is => 'ro',
+    default => sub { return \&MongoDB::BSON::decode_bson },
+);
+
 sub BUILD {
     my ($self, $opts) = @_;
     eval "use ${_}" # no Any::Moose::load_class because the namespaces already have symbols from the xs bootstrap
         for qw/MongoDB::Database MongoDB::Cursor MongoDB::OID MongoDB::Timestamp/;
+
+    $MongoDB::_Protocol::encode_bson = $self->encode_bson;
+    $MongoDB::_Protocol::decode_bson = $self->decode_bson;
 
     my @pairs;
 
