@@ -14,51 +14,25 @@
 #  limitations under the License.
 #
 
-package MongoDB::Code;
+package MongoDB::BSON::String;
 
-
-# ABSTRACT: JavaScript Code
+# ABSTRACT: String type
 
 use version;
 our $VERSION = 'v0.704.4.1';
 
-=head1 NAME
-
-MongoDB::Code - JavaScript code
-
-=cut
-
 use Moose;
 use namespace::clean -except => 'meta';
 
-use base qw/BSON::Types::Code/;
+use base qw/BSON::Types::String/;
 
-=head1 ATTRIBUTES
-
-=head2 code
-
-A string of JavaScript code.
-
-=cut
-
-has code => (
-    is       => 'ro',
-    isa      => 'Str',
-    required => 1,
-);
-
-=head2 scope
-
-An optional hash of variables to pass as the scope.
-
-=cut
-
-has scope => (
-    is       => 'ro',
-    isa      => 'HashRef',
-    required => 0,
+has value => (
+    is => 'ro',
+    isa => 'Str',
+    required => 1
 );
 
 __PACKAGE__->meta->make_immutable;
 
 1;
+

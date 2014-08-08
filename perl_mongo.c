@@ -657,12 +657,12 @@ elem_to_sv (const bson_iter_t * iter, char *dt_type, int inflate_dbrefs, int inf
     break;
   }
   case BSON_TYPE_MINKEY: {
-    HV *stash = gv_stashpv("MongoDB::MinKey", GV_ADD);
+    HV *stash = gv_stashpv("BSON::Types::MinKey", GV_ADD);
     value = sv_bless(newRV((SV*)newHV()), stash);
     break;
   }
   case BSON_TYPE_MAXKEY: {
-    HV *stash = gv_stashpv("MongoDB::MaxKey", GV_ADD);
+    HV *stash = gv_stashpv("BSON::Types::MaxKey", GV_ADD);
     value = sv_bless(newRV((SV*)newHV()), stash);
     break;
   }
@@ -1190,6 +1190,10 @@ append_sv (bson_t * bson, const char * in_key, SV *sv, stackette *stack, int is_
         ixhash_to_bson(&child, sv, NO_PREP, stack, is_insert);
         bson_append_document_end(bson, &child);
       }
+      /* BSON::Types::DateTime */
+      else if (sv_derived_from(sv, "BSON::Types::DateTime")) {
+        bson_append_date_time(bson, key, -1, (int64_t)SvIV(perl_mongo_call_reader(sv, "value")));
+      }
       /* DateTime */
       else if (sv_isa(sv, "DateTime")) {
         SV *sec, *ms, *tz, *tz_name;
@@ -1249,7 +1253,10 @@ append_sv (bson_t * bson, const char * in_key, SV *sv, stackette *stack, int is_
       else if (sv_isa(sv, "boolean")) {
         bson_append_bool(bson, key, -1, SvIV(SvRV(sv)));
       }
-      else if (sv_isa(sv, "MongoDB::Code")) {
+      else if (sv_derived_from(sv, "BSON::Types::Boolean")) {
+        bson_append_bool(bson, key, -1, perl_mongo_call_reader(sv, "value"));
+      }
+      else if (sv_derived_from(sv, "BSON::Types::Code")) {
         SV *code, *scope;
         char *code_str;
         STRLEN code_len;
@@ -1292,12 +1299,7 @@ append_sv (bson_t * bson, const char * in_key, SV *sv, stackette *stack, int is_
         char *str;
         STRLEN str_len;
 
-        str_sv = SvRV(sv);
-
-        // check type ok
-        if (!SvPOK(str_sv)) {
-          croak("BSON::Types::String must be a blessed string reference");
-        }
+        str_sv = perl_mongo_call_reader(sv, "value");
 
         str = SvPV(str_sv, str_len);
 

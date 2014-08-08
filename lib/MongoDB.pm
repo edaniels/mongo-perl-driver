@@ -28,6 +28,7 @@ our $VERSION = 'v0.704.4.1';
 # function implementation on 5.10, and was automatically available in 5.10.1
 use if ($] eq '5.010000'), 're', 'regexp_pattern';
 
+use BSON;
 use Carp ();
 use MongoDB::BSON;
 use MongoDB::Connection;
@@ -39,6 +40,7 @@ use MongoDB::OID;
 use MongoDB::Timestamp;
 use MongoDB::BSON::Binary;
 use MongoDB::BSON::Regexp;
+use MongoDB::BSON::String;
 use MongoDB::BulkWrite;
 use MongoDB::_Link;
 use MongoDB::_Protocol;

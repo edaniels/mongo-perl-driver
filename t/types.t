@@ -18,6 +18,7 @@ use strict;
 use warnings;
 use Test::More 0.96;
 
+use BSON;
 use MongoDB;
 use MongoDB::OID;
 use MongoDB::Code;
@@ -131,8 +132,8 @@ is($id."", $id->value);
     $coll->insert({min => $min, max => $max});
     my $x = $coll->find_one;
 
-    isa_ok($x->{min}, 'MongoDB::MinKey');
-    isa_ok($x->{max}, 'MongoDB::MaxKey');
+    isa_ok($x->{min}, 'BSON::Types::MinKey');
+    isa_ok($x->{max}, 'BSON::Types::MaxKey');
 }
 
 # tie::ixhash
@@ -273,6 +274,8 @@ SKIP: {
 
     is($x->{'ts'}->sec, $t->sec);
     is($x->{'ts'}->inc, $t->inc);
+
+    $coll->drop;
 }
 
 # use_boolean

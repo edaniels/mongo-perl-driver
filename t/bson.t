@@ -322,7 +322,7 @@ package main;
     my $num = "001";
 
     $c->insert({num => $num}, {safe => 1});
-    $c->insert({num => bless(\$num, "BSON::Types::String")}, {safe => 1});
+    $c->insert({num => MongoDB::BSON::String->new({value => $num})}, {safe => 1});
 
     $MongoDB::BSON::looks_like_number = 0;
 
