@@ -439,8 +439,6 @@ elem_to_sv (const bson_iter_t * iter, char *dt_type, int inflate_dbrefs, int inf
       break;
     }
 
-    SAVETMPS;
-
     PUSHMARK(SP);
     PUTBACK;
     if (d) {
@@ -457,8 +455,6 @@ elem_to_sv (const bson_iter_t * iter, char *dt_type, int inflate_dbrefs, int inf
       value = newSViv(d);
     }
 
-    PUTBACK;
-    FREETMPS;
     break;
   }
   case BSON_TYPE_UNDEFINED:
@@ -739,34 +735,31 @@ bson_to_sv (bson_iter_t * iter, char *dt_type, int inflate_dbrefs, int inflate_r
 
   while (bson_iter_next(iter)) {
     const char *name;
+    int32_t name_len;
     SV *value;
 
     name = bson_iter_key(iter);
+    name_len = !utf8_flag_on || !SvIOK(utf8_flag_on) || SvIV(utf8_flag_on) != 0 ? 0-strlen (name) : strlen (name);
 
     if ( ! is_utf8_string((const U8*)name,strlen(name))) {
       croak( "Invalid UTF-8 detected while decoding BSON" );
     }
 
-    key_num++;
+    key_num++;  
     /* check if this is a DBref. We must see the keys
        $ref, $id, and $db in that order, with no extra keys */
-    if ( key_num == 1 && strcmp( name, "$ref" ) ) is_dbref = 0;
-    if ( key_num == 2 && is_dbref == 1 && strcmp( name, "$id" ) ) is_dbref = 0;
-    if ( key_num == 3 && is_dbref == 1 && strcmp( name, "$db" ) ) is_dbref = 0;
+    if ( ( key_num == 1 && strcmp( name, "$ref" ) ) || 
+         ( key_num == 2 && is_dbref == 1 && strcmp( name, "$id" ) ) ||
+         ( key_num == 3 && is_dbref == 1 && strcmp( name, "$db" ) ) )
+       is_dbref = 0;
 
     // get past field name
 
     // get value
     value = elem_to_sv(iter, dt_type, inflate_dbrefs, inflate_regexps, client );
-    if (!utf8_flag_on || !SvIOK(utf8_flag_on) || SvIV(utf8_flag_on) != 0) {
-    	if (!hv_store (ret, name, 0-strlen (name), value, 0)) {
-     	 croak ("failed storing value in hash");
-    	}
-    } else {
-    	if (!hv_store (ret, name, strlen (name), value, 0)) {
-     	 croak ("failed storing value in hash");
-    	}
-    }
+  	if (!hv_store (ret, name, name_len, value, 0)) {
+   	 croak ("failed storing value in hash");
+  	}
   }
 
   if ( key_num == 3 && is_dbref == 1 && inflate_dbrefs == 1 ) { 
