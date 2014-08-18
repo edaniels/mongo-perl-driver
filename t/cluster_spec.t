@@ -32,8 +32,6 @@ sub wanted {
         my $plan = YAML::XS::LoadFile($_);
 
         run_test($name, $plan);
-
-        exit(1);
     };
 }
 
@@ -51,13 +49,45 @@ sub run_test {
             for my $response (@{$phase->{'responses'}}) {
 
                 # Process response
-                # got_ismaster($cluster, $response[0], $response[1]);
+                # got_ismaster($cluster, @$response[0], @$response[1]);
             }
 
             # Process outcome
             # check_outcome($cluster, $phase->{'outcome'});
         }
     };
+}
+
+sub got_ismaster {
+
+    my ($cluster, $address, $response) = @_;
+
+    # my $server_desc = ServerDescription->new($address, IsMaster->new($response), MovingAverage->new([0]));
+    # $cluster->on_change($server_desc);
+}
+
+sub check_outcome {
+
+    my ($cluster, $outcome) = @_;
+
+    my %expected_servers = %{$outcome->{'servers'}};
+
+    # is(
+    #         scalar key %{$cluster->description->server_descriptions},
+    #         scalar keys %expected_servers,
+    #         'correct amount of servers');
+
+    while (my ($key, $value) = each %expected_servers) {
+
+        # ok($cluster->has_server($key));
+        # my $actual_server_desc = $cluster->get_server_by_address($key)->description;
+
+        # is($actual_server_desc->server_type, $value->{'serverType'}, 'correct server type');
+        # is($actual_server_desc->set_name, $value->{'setName'}, 'correct setName for server');
+    }
+
+    # is(, $outcome->{'setName'}, 'correct setName for cluster');
+    # is(, $outcome->{'clusterType'}, 'correct cluster type');
 }
 
 done_testing;
