@@ -19,8 +19,9 @@ use warnings;
 use Test::More 0.88;
 use File::Find;
 use Path::Tiny;
-
 use YAML::XS;
+
+use MongoDB;
 
 File::Find::find({wanted => \&wanted, no_chdir => 1}, 't/cluster');
 
@@ -42,28 +43,29 @@ sub run_test {
     subtest "test_$test_name" => sub {
 
         # Create mock cluster
-        # my $cluster = create_mock_cluster(plan->{'uri'});
+        my $uri = MongoDB::_URI->new( uri => $plan->{'uri'} );
+        my $cluster = MongoDB::_Cluster->new( uri => $uri );
 
         for my $phase (@{$plan->{'phases'}}) {
 
             for my $response (@{$phase->{'responses'}}) {
 
                 # Process response
-                # got_ismaster($cluster, @$response[0], @$response[1]);
+                my $desc = MongoDB::_Server->new(
+
+                    address => @$response[0],
+                    is_master => @$response[1],
+                    last_update_time => [ Time::HiRes::gettimeofday() ],
+                );
+
+                $cluster->_update_cluster_from_server_desc( @$response[0], $desc);
             }
 
             # Process outcome
-            # check_outcome($cluster, $phase->{'outcome'});
+            check_outcome($cluster, $phase->{'outcome'});
         }
     };
-}
 
-sub got_ismaster {
-
-    my ($cluster, $address, $response) = @_;
-
-    # my $server_desc = ServerDescription->new($address, IsMaster->new($response), MovingAverage->new([0]));
-    # $cluster->on_change($server_desc);
 }
 
 sub check_outcome {
@@ -71,23 +73,24 @@ sub check_outcome {
     my ($cluster, $outcome) = @_;
 
     my %expected_servers = %{$outcome->{'servers'}};
+    my %actual_servers = %{$cluster->servers};
 
-    # is(
-    #         scalar key %{$cluster->description->server_descriptions},
-    #         scalar keys %expected_servers,
-    #         'correct amount of servers');
+    is( scalar keys %actual_servers, scalar keys %expected_servers, 'correct amount of servers');
 
     while (my ($key, $value) = each %expected_servers) {
 
-        # ok($cluster->has_server($key));
-        # my $actual_server_desc = $cluster->get_server_by_address($key)->description;
+        ok( (exists $actual_servers{$key}), "$key exists in outcome");
+        my $actual_server = $actual_servers{$key};
 
-        # is($actual_server_desc->server_type, $value->{'serverType'}, 'correct server type');
-        # is($actual_server_desc->set_name, $value->{'setName'}, 'correct setName for server');
+        is($actual_server->type, $value->{'type'}, 'correct server type');
+
+        my $expected_set_name = defined $value->{'setName'} ? $value->{'setName'} : "";
+        is($actual_server->set_name, $expected_set_name, 'correct setName for server');
     }
 
-    # is(, $outcome->{'setName'}, 'correct setName for cluster');
-    # is(, $outcome->{'clusterType'}, 'correct cluster type');
+    my $expected_set_name = defined $outcome->{'setName'} ? $outcome->{'setName'} : "";
+    is($cluster->replica_set_name, $expected_set_name, 'correct setName for cluster');
+    is($cluster->type, $outcome->{'clusterType'}, 'correct cluster type');
 }
 
 done_testing;
